@@ -130,6 +130,15 @@ This will display the predictions made by the inference pipeline.
 - **Stream Processing**: Both training data preparation and real-time inference consume from the same stream
 - **Retraining/Reprocessing**: Model retraining can be done by re-running the training pipeline on the same data source
 
+## Kappa Architecture Illustrated:
+- **Data Source**: iot_raw_data Kafka topic is the single source for both training data preparation and real-time inference.
+- **Stream Processing**:
+training_pipeline.py reads from the stream, "processes" it (collects and transforms), and trains a model. This is the "batch" part of Kappa, but it's sourced from the stream.
+inference_pipeline.py reads from the stream, processes individual messages, and applies the model in near real-time.
+- **Retraining/Reprocessing**:
+To retrain the model with more data, you'd simply re-run training_pipeline.py. It will read from iot_raw_data again (from earliest offset within its consumer group, or up to a certain point if you manage offsets more carefully).
+If your feature engineering logic changes, you update it in both training_pipeline.py and inference_pipeline.py, retrain, and redeploy. The new inference pipeline will then use the updated logic on new incoming data.
+
 ## Potential Improvements
 
 - Replace Python scripts with robust stream processing frameworks like Apache Spark Streaming, Apache Flink, or Kafka Streams
